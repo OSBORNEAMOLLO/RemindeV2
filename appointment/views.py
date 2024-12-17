@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -81,7 +82,7 @@ def favorite_appointment(request, appointment_id):
     appointment.save()
     return JsonResponse({'success': True})
 
-
+@login_required
 def index(request):
     if not request.user.is_authenticated:
         return render(request, 'appointment/index.html')
