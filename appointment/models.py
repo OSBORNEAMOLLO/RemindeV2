@@ -28,7 +28,7 @@ class Consultation(models.Model):
         return f"{self.doctor_name} - {self.patient_name}"
     
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)    
     phone_number = models.CharField(max_length=15)
     address = models.TextField()
 

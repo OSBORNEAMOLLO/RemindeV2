@@ -5,11 +5,12 @@ app_name = 'appointment'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    # path('/', views.index, name='index'),
     path('register/', views.register, name='register'),
     path('login_user/', views.login_user, name='login_user'),
     path('logout_user/', views.logout_user, name='logout_user'),
     path('<int:appointment_id>/', views.detail, name='detail'),
-    path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/', views.index, name='index'),
     path('<int:consultation_id>/isdoctor/', views.isdoctor, name='isdoctor'),
     path('consultations/<str:filter_by>/', views.consultations, name='consultations'),
     path('create_appointment/', views.create_appointment, name='create_appointment'),

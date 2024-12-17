@@ -5,6 +5,10 @@ from .models import Appointment, Consultation, UserProfile
 
 
 class AppointmentForm(forms.ModelForm):
+    date = forms.DateField(
+        widget=forms.TextInput(attrs={'class': 'form-control datepicker', 'placeholder': 'Select a date'})
+    )
+
 
     class Meta:
         model = Appointment
@@ -24,7 +28,7 @@ class ConsultationForm(forms.ModelForm):
 #         model = User
 #         fields = ['username', 'email','Phone Number', 'password', "Confirm Password", ]
 
-class UserForm(forms.Form):
+class UserForm(forms.ModelForm):
     username = forms.CharField(max_length=100, label="Username")
     email = forms.EmailField(label="Email")
     password = forms.CharField(widget=forms.PasswordInput, label="Password")

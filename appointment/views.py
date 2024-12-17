@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q
@@ -85,23 +86,26 @@ def index(request):
     if not request.user.is_authenticated:
         return render(request, 'appointment/index.html')
     
-    appointments = Appointment.objects.filter(user=request.user)
-    query = request.GET.get('q')
-    
-    if query:
-        appointments = appointments.filter(
-            Q(doctor__icontains=query) |
-            Q(patient_name__icontains=query)
-        ).distinct()
-        consultation_results = consultation_results.filter(
-            Q(doctor__icontains=query)
-        ).distinct()
-        return render(request, 'appointment/index.html', {
-            'appointments': appointments,
-            'consultations': consultation_results,
-        })
-    
-    return render(request, 'appointment/index.html', {'appointments': appointments})
+    else:
+        appointments = Appointment.objects.filter(user=request.user)
+        consultation_results = Consultation.objects.all()
+        query = request.GET.get('q')
+
+        if query:
+            appointments = appointments.filter(
+                Q(doctor__icontains=query) |
+                Q(patient_name__icontains=query)
+            ).distinct()
+            consultation_results = consultation_results.filter(
+                Q(doctor__icontains=query)
+            ).distinct()
+            return render(request, 'appointment/index.html', {
+                'appointments': appointments,
+                'consultations': consultation_results,
+            })
+        else:
+
+            return render(request, 'appointment/index.html', {'appointments': appointments})
 
 
 def logout_user(request):
@@ -113,12 +117,18 @@ def login_user(request):
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
+        user = authenticate(request, username=username, password=password)        
         if user is not None:
-            login(request, user)
-            return redirect('appointment:index')
-        return render(request, 'appointment/login.html', {'error_message': 'Invalid login'})
+            if user.is_active:
+                login(request, user)
+                appointments = Appointment.objects.filter(user=request.user)
+                return render(request, 'appointment/index.html', {'appointments': appointments})
+            else:
+                return render(request, 'appointment/login.html', {'error_message': 'Your account is disabled'})
+
+        else:
+            return render(request, 'appointment/login.html', {'error_message': 'Invalid login'})
+        
     
     return render(request, 'appointment/login.html')
 
@@ -136,22 +146,44 @@ def home(request):
 
 
 
-def register(request):
-    form = UserForm(request.POST or None)
-    if form.is_valid():
-        user = form.save(commit=False)
-        user.set_password(form.cleaned_data['password'])
+# def register(request):
+#     form = UserForm(request.POST or None)
+#     if form.is_valid():
+#         user = form.save(commit=False)
+#         user.set_password(form.cleaned_data['password'])
         
 
-        phone_number = form.cleaned_data.get('phone_number')
-        address = form.cleaned_data.get('address')
-        UserProfile.objects.create(user=user, phone_number=phone_number, address=address)
-        user.save()
-        login(request, user)
-        return redirect('appointment:index')
+#         phone_number = form.cleaned_data.get('phone_number')
+#         address = form.cleaned_data.get('address')
+#         UserProfile.objects.create(user=user, phone_number=phone_number, address=address)
+#         user.save()
+#         login(request, user)
+#         return redirect('appointment:index')
     
-    return render(request, 'appointment/register.html', {'form': form})
+#     return render(request, 'appointment/register.html', {'form': form})
 
+def register(request):
+    if request.method == "POST":
+        form = UserForm(request.POST)
+        if form.is_valid():
+            # Create the User instance
+            user = User.objects.create_user(
+                username=form.cleaned_data['username'],
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password']
+            )
+            
+            # Create the UserProfile instance and link it to the User
+            UserProfile.objects.create(
+                user=user,
+                phone_number=form.cleaned_data['phone_number'],
+                address=form.cleaned_data.get('address', '')
+            )
+            return redirect('appointment:login_user')  # Redirect to login after successful registration
+    else:
+        form = UserForm()
+
+    return render(request, 'appointment/register.html', {'form': form})
 
 def consultations(request, filter_by):
     if not request.user.is_authenticated:
